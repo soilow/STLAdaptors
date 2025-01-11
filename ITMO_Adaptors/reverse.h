@@ -1,34 +1,26 @@
 #pragma once
 
 template<typename Container>
-class TakeView {
+class ReverseView {
 public:
     using iterator_type = typename Container::iterator;
 
-    TakeView(Container& container, size_t&& count)
-            : container_(container),
-              count_(std::move(count)),
-              begin_(iterator(*this, container.begin())),
-              end_(iterator(*this, container.end())) {
-        iterator temp = begin_;
-                
-        while (count_-- && temp != end_) {
-            ++temp;
-        }
-        
-        end_ = temp;
-    }
+    ReverseView(Container& container)
+        : container_(container),
+          begin_(iterator(*this, --container.end())),
+          end_(iterator(*this, --container.begin())) {}
 
     class iterator {
     public:
-        iterator(TakeView& take_view, iterator_type iter)
-            : take_view__(take_view), iter__(iter) {}
+        iterator(ReverseView& reverse_view, iterator_type iter)
+            : reverse_view__(reverse_view),
+              iter__(iter) {}
         
         ~iterator()                            = default;
         iterator(const iterator& other)        = default;
         iterator(iterator&& other)             = default;
         iterator& operator=(iterator&& other)  = default;
-
+        
         iterator& operator=(const iterator& other) {
             if (this != &other) {
                 iter__ = other.iter__;
@@ -36,9 +28,14 @@ public:
             
             return *this;
         }
-
+        
         auto operator*() {
             return *iter__;
+        }
+
+        iterator& operator++() {
+            --iter__;
+            return *this;
         }
         
         iterator& operator--() {
@@ -46,45 +43,40 @@ public:
             return *this;
         }
 
-        iterator& operator++() {
-            ++iter__;
-            return *this;
-        }
-
         bool operator!=(const iterator& other) const {
             return iter__ != other.iter__;
         }
-
+        
     private:
-        TakeView& take_view__;
         iterator_type iter__;
+        ReverseView& reverse_view__;
     };
     
-    iterator begin() { return begin_; }
-    iterator end() { return end_; }
-
+    auto begin() {return begin_; }
+    auto end() {return end_; }
+    
 private:
     Container& container_;
-    size_t count_;
     
     iterator begin_;
     iterator end_;
 };
 
-class TakeProxy {
+class ReverseProxy {
 public:
-    TakeProxy(size_t&& count) : count_(std::move(count)) {}
-    
+    ReverseProxy(){}
+
     template<typename Container>
     auto operator()(Container& container) {
-        return TakeView<Container>(container, std::move(count_));
+        return ReverseView<Container>(container);
     }
-private:
-    size_t count_;
 };
 
 namespace Misha_and_Murad {
-    TakeProxy take(size_t count) {
-        return TakeProxy(std::move(count));
+    ReverseProxy reverse() {
+        return ReverseProxy();
     }
 } // namespace Misha_and_Murad
+
+
+

@@ -1,24 +1,17 @@
 #include <iostream>
-#include <vector>
-#include <set>
-
 #include "ITMO_Adaptors/adaptors.h"
 
 using namespace Misha_and_Murad;
 
+/*
+	К вопросу почему namespace с адаптерами называется Misha_and_Murad: Миша и Мурад - наши адаптеры.
+	Когда я узнал, что лабораторная работа будет по адаптерам, то не мог не включить каким-либо
+	образом наших адаптеров)
+*/
+
 int main() {
-    std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-
-    for (int i: v | drop(2) | take(3)) {
-        std::cout << i << " ";
-    }
-
-    for (int i: v | Misha_and_Murad::drop(2)
-                  | Misha_and_Murad::filter([](int x){return !(x & 1);})
-                  | Misha_and_Murad::transform([](int x){return x * 2;})
-                  | Misha_and_Murad::take(5)) {
-        std::cout << i << " ";
-    }
-
     return 0;
 }
+
+
+https://informatics.msk.ru/ajax/ajax.php?problem_id=112567&user_id=857146&group_id=0&lang_id=-1&from_timestamp=-1&to_timestamp=-1&statement_id=0&objectName=submits&action=downloadRun&status_id=-1

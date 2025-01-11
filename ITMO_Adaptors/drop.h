@@ -1,23 +1,47 @@
 #pragma once
 
+//#include "utils.h"
+
 template<typename Container>
 class DropView {
 public:
+    using iterator_type = typename Container::iterator;
+    
     DropView(Container& container, size_t&& count)
-        : container_(container), count_(count) {}
+        : container_(container),
+          count_(std::move(count)),
+          begin_(iterator(*this, container.begin())),
+          end_(iterator(*this, container.end())) {
+              
+        while (count_-- && ++begin_ != end_) {}
+    }
 
     class iterator {
     public:
-        iterator(typename Container::iterator iter, Container& container_, size_t* count)
-            : iter__(iter), container__(container_), count__(count) {
-                while (iter__ != container__.end() && *count__) {
-                    ++iter__;
-                    --(*count__);
-                }
+        iterator(DropView& drop_view, iterator_type iter)
+            : drop_view__(drop_view),
+              iter__(iter) {}
+        
+        ~iterator()                            = default;
+        iterator(const iterator& other)        = default;
+        iterator(iterator&& other)             = default;
+        iterator& operator=(iterator&& other)  = default;
+        
+        iterator& operator=(const iterator& other) {
+            if (this != &other) {
+                iter__ = other.iter__;
+            }
+            
+            return *this;
         }
 
         auto operator*() {
             return *iter__;
+        }
+        
+        iterator& operator--() {
+            --iter__;
+            return *this;
         }
 
         iterator& operator++() {
@@ -28,29 +52,32 @@ public:
         bool operator!=(const iterator& other) const {
             return iter__ != other.iter__;
         }
-
+         
     private:
-        typename Container::iterator iter__;
+        DropView& drop_view__;
+        iterator_type iter__;
         size_t* count__;
-        Container& container__;
     };
 
-    auto begin() { return iterator(container_.begin(), container_, &count_); }
-    auto end() { return iterator(container_.end(), container_, &count_); }
+    auto begin() { return begin_; }
+    auto end() { return end_;}
 
 private:
-    Container container_;
+    Container& container_;
     size_t count_;
+    
+    iterator begin_;
+    iterator end_;
 };
 
 
 class DropProxy {
 public:
-    DropProxy(size_t&& count) : count_(std::forward<size_t>(count)) {}
+    DropProxy(size_t&& count) : count_(std::move(count)) {}
     
     template<typename Container>
     auto operator()(Container& container) {
-        return DropView<Container>(container, std::forward<size_t>(count_));
+        return DropView<Container>(container, std::move(count_));
     }
 private:
     size_t count_;
@@ -58,6 +85,6 @@ private:
 
 namespace Misha_and_Murad {
     DropProxy drop(size_t&& count) {
-        return DropProxy(std::forward<size_t>(count));
+        return DropProxy(std::move(count));
     }
 } // namespace Misha_and_Murad

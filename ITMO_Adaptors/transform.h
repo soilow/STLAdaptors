@@ -3,20 +3,44 @@
 template<typename Container, typename Predicate>
 class TransformView {
 public:
-    TransformView(Container& container, Predicate&& predicate)
-        : container_(container), predicate_(std::forward<Predicate>(predicate)) {}
+    using iterator_type = typename Container::iterator;
 
+    TransformView(Container& container, Predicate&& predicate)
+        : container_(container),
+          predicate_(std::move(predicate)),
+          begin_(*this, container.begin()),
+          end_(*this, container.end()) {}
 
     class iterator {
     public:
-        iterator(typename Container::iterator iter, Predicate&& predicate) : iter__(iter), predicate__(std::forward<Predicate>(predicate)) {}
+        iterator(TransformView& transform_view, iterator_type iter)
+            : transform_view__(transform_view),
+              iter__(iter) {}
+        
+        ~iterator()                            = default;
+        iterator(const iterator& other)        = default;
+        iterator(iterator&& other)             = default;
+        iterator& operator=(iterator&& other)  = default;
 
+        iterator& operator=(const iterator& other) {
+            if (this != &other) {
+                iter__ = other.iter__;
+            }
+            
+            return *this;
+        }
+        
         auto operator*() {
-            return predicate__(*iter__);
+            return transform_view__.predicate_(*iter__);
         }
 
         iterator& operator++() {
             ++iter__;
+            return *this;
+        }
+        
+        iterator& operator--() {
+            --iter__;
             return *this;
         }
 
@@ -25,29 +49,30 @@ public:
         }
 
     private:
-        typename Container::iterator iter__;
-        Predicate predicate__;
+        TransformView& transform_view__;
+        iterator_type iter__;
     };
 
-    // Методы begin() и end() для итерации по представлению
-    auto begin() { return iterator(container_.begin(), std::forward<Predicate>(predicate_)); }
-    auto end() { return iterator(container_.end(), std::forward<Predicate>(predicate_)); }
-
+    auto begin() { return begin_; }
+    auto end() { return end_; }
+    
 private:
-    Container container_;
+    Container& container_;
     Predicate predicate_;
+    
+    iterator begin_;
+    iterator end_;
 };
 
 template<typename Predicate>
 class TransformProxy {
 public:
-    TransformProxy(Predicate&& predicate) : predicate_(std::forward<Predicate>(predicate_)) {}
+    TransformProxy(Predicate&& predicate) : predicate_(std::move(predicate)) {}
 
     template<typename Container>
     auto operator()(Container& container) {
-        return TransformView<Container, Predicate>(container, std::forward<Predicate>(predicate_));
+        return TransformView<Container, Predicate>(container, std::move(predicate_));
     }
-
 private:
     Predicate predicate_;
 };
@@ -55,6 +80,7 @@ private:
 namespace Misha_and_Murad {
     template<typename Predicate>
     TransformProxy<Predicate> transform(Predicate&& predicate) {
-        return TransformProxy<Predicate>(std::forward<Predicate>(predicate));
+        return TransformProxy<Predicate>(std::move(predicate));
     }
 } // namespace Misha_and_Murad
+
